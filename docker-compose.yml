@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. Database Container (Creates container from a pre-built image)
+  db:
+    image: postgres:15-alpine
+    container_name: ${DATA_SOURCE} #this is the DNS host name too
+    restart: always
+    environment:
+      # Docker Compose automatically populates these using your local .env file
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DATA_SOURCE_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - chat_network
+    healthcheck:
+      # Securely checks if Postgres is fully up and ready to accept connections
+      test: ["CMD-SHELL", "pg_isready -U $$DB_USERNAME -d $$DB_NAME"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Go Application Container (Builds image from your Dockerfile & creates container)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat_app_go
+    restart: always
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    # Automatically injects your .env variables directly into the OS memory for Viper
+    # env_file:
+    #   - .env
+    volumes:
+      - ./.env:/.env
+    networks:
+      - chat_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+# 3. Securely linking them together via internal networking and data volumes
+networks:
+  chat_network:
+    driver: bridge
+
+volumes:
+  pgdata:

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"ChatAppGo/internal/authentication/bootstrap"
+	"chatAppGo/internal/authentication/bootstrap"
+
 	"log"
 )
 

@@ -7,21 +7,30 @@ import (
 )
 
 type Env struct {
-	appEnv         string `mapstructure:"APP_ENV"`
-	serverAddress  string `mapstructure:"SERVER_ADDRESS"`
-	datasource     string `mapstructure:"DATA_SOURCE"`
-	dbPort         int    `mapstructure:"DATA_SOURCE_PORT"`
-	contextTimeout int    `mapstructure:"CONTEXT_TIMEOUT"`
-	dbUsername     string `mapstructure:"DB_USERNAME"`
-	dbPassword     string `mapstructure:"DB_STRUCTURE"`
-	dbName         string `mapstructure:"DB_NAME"`
+	AppEnv        string `mapstructure:"APP_ENV"`
+	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
+	Port          int    `mapstructure:"PORT"` // Added to catch the server port
+	Datasource    string `mapstructure:"DATA_SOURCE"`
+	DbPort        int    `mapstructure:"DATA_SOURCE_PORT"`
+	DbTimeout     int    `mapstructure:"DB_TIMEOUT"`
+	DbUsername    string `mapstructure:"DB_USERNAME"`
+	DbPassword    string `mapstructure:"DB_PASSWORD"`
+	DbName        string `mapstructure:"DB_NAME"`
+	DbMaxAttempts int    `mapstructure:"DB_MAX_ATTEMPTS"`
+	DbMaxPoolSize int    `mapstructure:"DB_MAX_POOL_SIZE"`
 }
 
 var ENV_PATH = ".env"
 
 func NewEnv() *Env {
 	env := Env{}
-	viper.SetConfigFile(ENV_PATH)
+	viper.SetConfigName(".env")
+	// Tell Viper what format it is
+	viper.SetConfigType("env")
+
+	// 📂 Look for the file in the project root directory (current working directory)
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
 
 	readConfigErr := viper.ReadInConfig()
 
@@ -29,12 +38,12 @@ func NewEnv() *Env {
 		log.Fatal("Can not find the config file")
 	}
 
-	marshalErr := viper.Unmarshal()
+	marshalErr := viper.Unmarshal(&env)
 
 	if marshalErr != nil {
 		log.Fatal("Can not load environment")
 	}
-	if env.appEnv == "development" {
+	if env.AppEnv == "development" {
 		log.Printf("App is running in development environment")
 	}
 	return &env
